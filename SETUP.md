@@ -217,14 +217,39 @@ WantedBy=multi-user.target
 
 ## Перенос проекта на сервер
 
+### 1. Создать архив (без секретных файлов и мусора)
+
 ```bash
-# На локальной машине — создать архив
-zip -r expense-bot.zip expense-bot/ --exclude "*/venv/*" --exclude "*/__pycache__/*" --exclude "*/database/*"
+# Windows (PowerShell)
+Compress-Archive -Path expense-bot -DestinationPath expense-bot.zip
 
-# Скопировать на сервер
+# Linux/macOS
+zip -r expense-bot.zip expense-bot/ \
+  --exclude "*/venv/*" \
+  --exclude "*/__pycache__/*" \
+  --exclude "*/database/*" \
+  --exclude "*/.env" \
+  --exclude "*/credentials.json"
+```
+
+### 2. Скопировать архив на сервер
+
+```bash
 scp expense-bot.zip ubuntu@ВАШ_IP:/home/ubuntu/
+```
 
-# На сервере — распаковать и установить
+### 3. Скопировать секретные файлы отдельно
+
+⚠️ Эти файлы не в Git и не в архиве — передавать только вручную:
+
+```bash
+scp .env ubuntu@ВАШ_IP:/home/ubuntu/expense-bot/
+scp credentials.json ubuntu@ВАШ_IP:/home/ubuntu/expense-bot/
+```
+
+### 4. Установить на сервере
+
+```bash
 ssh ubuntu@ВАШ_IP
 unzip expense-bot.zip
 cd expense-bot
@@ -235,21 +260,58 @@ pip install ctranslate2==4.5.0 faster-whisper==1.1.1
 pip install -r requirements.txt
 ```
 
-Не забыть скопировать отдельно:
-- `.env` (содержит секретные ключи, не в архиве)
-- `credentials.json` (ключ Google, не в архиве)
+---
+
+## Git — важные правила
+
+Файлы которые **никогда не коммитить**:
+
+```bash
+# Если случайно попали в Git — удалить из отслеживания:
+git rm --cached .env
+git rm --cached credentials.json
+git commit -m "Remove secrets from tracking"
+```
 
 ---
 
 ## .gitignore
 
 ```
-venv/
+# Секретные файлы
 .env
 credentials.json
+
+# Python
 __pycache__/
-*.pyc
+*.py[cod]
+*.pyo
+.Python
+
+# Виртуальное окружение
+venv/
+.venv/
+
+# База данных
 database/
-*.ogg
 *.db
+*.sqlite3
+
+# Временные голосовые файлы
+*.ogg
+*.oga
+*.mp3
+*.wav
+
+# Streamlit
+.streamlit/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/
+.idea/
 ```
