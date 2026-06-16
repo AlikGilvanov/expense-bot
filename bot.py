@@ -66,7 +66,13 @@ async def error_handler(update, context):
     traceback.print_exc()
 
 def main():
-    app = Application.builder().token(TELEGRAM_TOKEN).build()
+    app = (
+    Application.builder()
+    .token(TELEGRAM_TOKEN)
+    .connect_timeout(30)
+    .read_timeout(30)
+    .write_timeout(30)
+    .build())
     app.add_handler(conv_handler)
     app.add_handler(CommandHandler("report", report_command))
     app.add_handler(CommandHandler("top", top_command))
