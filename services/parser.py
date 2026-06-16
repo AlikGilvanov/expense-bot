@@ -5,6 +5,24 @@ from services.llm import gpt_extract
 
 AMOUNT_PATTERN = re.compile(r'(\d+)\s*(?:руб|р|₽)?', re.IGNORECASE)
 
+WORD_NUMBERS = {
+    'один': 1, 'одна': 1, 'два': 2, 'две': 2, 'три': 3,
+    'четыре': 4, 'пять': 5, 'шесть': 6, 'семь': 7,
+    'восемь': 8, 'девять': 9, 'десять': 10, 'двадцать': 20,
+    'тридцать': 30, 'сорок': 40, 'пятьдесят': 50,
+    'сто': 100, 'двести': 200, 'триста': 300,
+    'тысяча': 1000, 'тысячи': 1000, 'тысяч': 1000
+}
+
+def text_to_number(text):
+    """Конвертирует числа-слова в цифры."""
+    words = text.lower().split()
+    total = 0
+    for word in words:
+        if word in WORD_NUMBERS:
+            total += WORD_NUMBERS[word]
+    return total if total > 0 else None
+
 def local_parse(text, user_id=None):
     """Локальный парсер с использованием таблицы нормализации."""
     # Проверяем нормализацию категории (уже включает таблицу правил)
@@ -12,9 +30,12 @@ def local_parse(text, user_id=None):
     
     # Извлекаем сумму
     am = AMOUNT_PATTERN.search(text)
-    if not am:
-        return None
-    amount = float(am.group(1))
+    if am:
+        amount = float(am.group(1))
+    else:
+        amount = text_to_number(text)
+        if not amount:
+            return None
     
     # Определение типа операции
     income_keywords = ["зарплата", "доход", "кэшбэк", "возврат средств", "премия", "стипендия", "подработка"]
